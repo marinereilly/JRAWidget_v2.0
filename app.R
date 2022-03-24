@@ -662,7 +662,7 @@ GetCurrentReading <- function(Station_ID,Parameter,df)
             filter(Date < Sys.time())%>%
             arrange()%>%
             filter(station_id == Station_ID) %>%
-            filter(!is.na(.))%>%
+            filter(!is.na(Parameter))%>%
             slice_head()%>%
             pull(Parameter)
         return(CurrentValue)
