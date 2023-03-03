@@ -36,6 +36,7 @@ library(httr)
 library(jsonlite)
 library(plotrix)
 library(googlesheets4)
+library(shinyalert)
 
 
 #### Declaring for using ShinyJS
@@ -63,8 +64,10 @@ $( document ).ready(function() {
 shinyjs::useShinyjs()
 
 ####### UI #######
-ui <- fluidPage(theme = "styler.css",
-              
+ui <- fluidPage(
+  tags$head(includeHTML(("google_analytics.html"))),
+                theme = "styler.css",
+                
                 
                 ### Header
                 div(id = "header",
@@ -104,7 +107,27 @@ ui <- fluidPage(theme = "styler.css",
 ### SERVER SECTION ###
 server <- function(input, output,session) {
     
-
+  shinyalert(
+    title = "How to use this Map",
+    text = "Click on a location icon to see recent conditions. To see past conditions or future predictions click the trends tab.
+Water quality data is collected Thursdays between Memorial Day and Labor Day. Stage and Flow information is available year-round.
+Square icons contain only stage and flow information. Caution warnings for river levels at these locations are for average paddlers and based on local guide recommendations. 
+Circle icons contain bacteria, temperature, stage, flow, and turbidity (cloudiness) values. Caution levels at these locations are for average swimmers and based on local guide and EPA recommendations.
+If a station value reads -9 it means no data was collected during this sampling event.
+   
+Please use caution when recreating on the River as conditions may change quickly.",
+    size = "s", 
+    closeOnEsc = TRUE,
+    closeOnClickOutside = TRUE,
+    html = FALSE,
+    showConfirmButton = TRUE,
+    showCancelButton = FALSE,
+    confirmButtonText = "OK",
+    confirmButtonCol = "#74D1EA",
+    timer = 0,
+    imageUrl = "",
+    animation = TRUE
+  )
     
 ###### ###### ###### ###### ###### ####
 ###### IMPORTS AND VAR DECLRATIONS ####
@@ -145,9 +168,8 @@ WRNOAAThresholds <- read_sheet("https://docs.google.com/spreadsheets/d/1lxxNuAPJ
 ### NOAA VAR DECLERATION + FILE IMPORT ### 
 ### Hardcoded list of NOAA stations and their lat longs. 
 NOAAStationsList <- read_sheet("https://docs.google.com/spreadsheets/d/119EBdkkskx6Hc9_TXTbl2JwE4t_vTWo0qfkH7EUtyF4/edit#gid=207141266")
-    
 ### !! For turning on and off NOAA Data !! ###
-NOAAData <- read_csv("www/NOAAData_v1.csv")
+NOAAData <- read_sheet("https://docs.google.com/spreadsheets/d/1ww0bSlmnp6B_AgzYoux68brlAKUGRcW6gB0P4PVue34")
 
 ### Values for controlling NOAA Min Max chart settings ###
 NOAAStationsMaxMin <- read_csv("www/NOAAStationsMaxMin_v1.csv")
@@ -161,7 +183,8 @@ IconSet <- iconList(
   Red = makeIcon(iconUrl = "www/images/NOAAred.png", iconWidth = 15, iconHeight = 15),
   Yellow = makeIcon(iconUrl = "www/images/NOAAyellow.png", iconWidth = 15, iconHeight = 15),
   Green = makeIcon(iconUrl = "www/images/NOAAgreen.png", iconWidth = 15, iconHeight = 15),
-  Grey = makeIcon(iconUrl = "www/images/NOAAgrey.png", iconWidth = 15, iconHeight = 15))
+  Grey = makeIcon(iconUrl = "www/images/NOAAgrey.png", iconWidth = 15, iconHeight = 15),
+  Blue = makeIcon(iconUrl = "www/images/NOAAblue.png", iconWidth = 15, iconHeight = 15))
 
 ### LOGICAL COMPONENETS DECLERATION ### 
 ##StationDataReactive$df is the selected data based on map marker click, and the parameter select 
@@ -177,15 +200,15 @@ RenderFlag <- reactiveValues(X = as.character("FALSE"))
 
 #### UI VAR DECLERATION ###
 #List of Icon Colors 
-IconColors <- c("Green", "Grey", "Red", "Yellow") 
+IconColors <- c("Blue","Green", "Grey", "Red", "Yellow") 
 
 #List of Color #'s 
-ColorHex <- c("#008000","#999999","#da222b","#ffea2e")
+ColorHex <- c("#74D1EA","#008000","#999999","#da222b","#ffea2e")
 #Bind of Colors and Color Hexs
 ColorSet <- data.frame(IconColors,ColorHex)
 
 #List of aspect ratios for threshold text 
-Ratio <- c(2.3449,4.7375,4.797,3.31)
+Ratio <- c(4.7375,2.3449,3.375,4.797,3.31)
 
 #Bind of Icon Colors and Ratio
 IconRatio <- data.frame(IconColors,Ratio)
@@ -237,7 +260,7 @@ GetWRStations <- function()
                       "Image" = image_url)%>%
                        mutate(Type = 0)
     
-    ### We need to get the colors for each station now which is a seperate per station and parameter request ###
+    ### We need to get the colors for each station now which is a separate per station and parameter request ###
     
     ### Wrapping this in a withProgress on startup because it takes a bit for each request
     withProgress(message = 'Fetching Water Reporter Data: ', value = nrow(StationData), {
@@ -332,7 +355,7 @@ GetWRData <- function(StationID,ParameterName)
     #selecting only ones which are above the current reading
     ThresholdValueListTrimmed <- list.filter(ThresholdValueList, . >= CurrentReading)
     
-    #Geting the min absulute value threshold line
+    #Getting the min absolute value threshold line
     ThresholdValue <- as.numeric(ThresholdValueListTrimmed[which.min(abs(CurrentReading-ThresholdValueListTrimmed))])
 
     # Checking to see if value is over threshold, setting to max threshold value
@@ -360,75 +383,75 @@ GetWRData <- function(StationID,ParameterName)
     return(Data)
 }
 
-## NOAA Data Request
-## Takes NOAA StationID 
-## Returns Date, Stage, Flow 
-## Used in NOAADataPull
-NOAADataRequest <- function(StationID)
-{ 
-    #Getting Sys.Date Year to append to data 
-    Year <- format(Sys.Date(), "%Y")
-    
-    #URL
-    url <- paste("https://water.weather.gov/ahps2/hydrograph_to_xml.php?gage=", StationID ,"&output=tabular", sep = "")
-    
-    #Getting URL
-    urlCurled <- getURL(url)
-    
-    #Reading HTML
-    dfRawHtml <- readHTMLTable(urlCurled, stringAsFactors = FALSE)
-    
-    #Getting Correct List
-    dfRaw <- data.frame(dfRawHtml[1])
-    
-    #Cleaning Data
-    dfCleaned <- dfRaw %>%
-        rename("Date" = NULL.V1,
-               "Stage" = NULL.V2,
-               "Flow" =  NULL.V3)%>%
-        ##Filtering out unneeded rows leftover from parsing
-        filter(!grepl('Forecast',Date))%>%
-        filter(!grepl('Observed',Date))%>%
-        filter(!grepl('Date',Date))%>%
-        mutate(Date = as.POSIXct(paste(Year,"/",as.character(Date), sep = ""), tz="UTC"))%>%
-        mutate(Stage = as.numeric(str_remove(Stage, "ft")))%>%
-        #Detecting the unit and converting cfs to kcfs 
-        mutate(Flow = ifelse(str_detect(Flow, "kcfs"), as.numeric(str_remove(Flow, "kcfs")), as.numeric(str_remove(Flow, "cfs"))/1000))%>%
-        #Handling no data value
-        mutate(Flow = ifelse(Flow < -900, NA, Flow))%>%
-        mutate(Stage = ifelse(Stage < -900, NA, Stage))%>%
-        mutate(station_id = StationID)
-    
-    return(dfCleaned)
-}
+# ## NOAA Data Request
+# ## Takes NOAA StationID 
+# ## Returns Date, Stage, Flow 
+# ## Used in NOAADataPull
+# #NOAADataRequest <- function(StationID)
+# { 
+#     #Getting Sys.Date Year to append to data 
+# #    Year <- format(Sys.Date(), "%Y")
+#     
+#     #URL
+# #    url <- paste("https://water.weather.gov/ahps2/hydrograph_to_xml.php?gage=", StationID ,"&output=tabular", sep = "")
+#     
+#     #Getting URL
+#     urlCurled <- getURL(url)
+#     
+#     #Reading HTML
+#     dfRawHtml <- readHTMLTable(urlCurled, stringAsFactors = FALSE)
+#     
+#     #Getting Correct List
+#     dfRaw <- data.frame(dfRawHtml[1])
+#     
+#     #Cleaning Data
+#     dfCleaned <- dfRaw %>%
+#         rename("Date" = NULL.V1,
+#                "Stage" = NULL.V2,
+#                "Flow" =  NULL.V3)%>%
+#         ##Filtering out unneeded rows leftover from parsing
+#         filter(!grepl('Forecast',Date))%>%
+#         filter(!grepl('Observed',Date))%>%
+#         filter(!grepl('Date',Date))%>%
+#         mutate(Date = as.POSIXct(paste(Year,"/",as.character(Date), sep = ""), tz="UTC"))%>%
+#         mutate(Stage = as.numeric(str_remove(Stage, "ft")))%>%
+#         #Detecting the unit and converting cfs to kcfs 
+#         mutate(Flow = ifelse(str_detect(Flow, "kcfs"), as.numeric(str_remove(Flow, "kcfs")), as.numeric(str_remove(Flow, "cfs"))/1000))%>%
+#         #Handling no data value
+#         mutate(Flow = ifelse(Flow < -900, NA, Flow))%>%
+#         mutate(Stage = ifelse(Stage < -900, NA, Stage))%>%
+#         mutate(station_id = StationID)
+#     
+#     return(dfCleaned)
+# }
 ## END NOAA DATA PARSER ##
 
 
 ### NOAADataPull
 # Constructs the NOAA Data Frame from the NOAAStationsList using the NOAADataRequest function
 # !!!! Uncomment line below to run loading, comment out to skip loading for testing ####
-NOAADataPull <- function()
-{
-    ## Assembling blank dataframe 
-    NOAAData <- data.frame(station_id = character(),
-                           Date = as.character(),
-                           Flow = double(),
-                           Stage = double())
-    
-       #We have a with progress here because it takes awhile 
-       withProgress(message = 'Fetching Predictive NOAA Data: ', value = nrow(NOAAStationsList), {
-        
-         ## Loops 
-        for (row in 1:nrow(NOAAStationsList))
-        {
-                incProgress(1/row, detail = HTML(paste(NOAAStationsList$station_name[row], " | ", row, " of ", 14, sep = "")))
-                 
-                # Runs the request, and binds it to the data 
-                NOAAData <- rbind(NOAAData,NOAADataRequest(NOAAStationsList$station_id[row]))
-        }
-        return(NOAAData)
-    })
-}
+# NOAADataPull <- function()
+# {
+#     ## Assembling blank dataframe 
+#     NOAAData <- data.frame(station_id = character(),
+#                            Date = as.character(),
+#                            Flow = double(),
+#                            Stage = double())
+#     
+#        #We have a with progress here because it takes awhile 
+#        withProgress(message = 'Fetching Predictive NOAA Data: ', value = nrow(NOAAStationsList), {
+#         
+#          ## Loops 
+#         for (row in 1:nrow(NOAAStationsList))
+#         {
+#                 incProgress(1/row, detail = HTML(paste(NOAAStationsList$station_name[row], " | ", row, " of ", 14, sep = "")))
+#                  
+#                 # Runs the request, and binds it to the data 
+#                 NOAAData <- rbind(NOAAData,NOAADataRequest(NOAAStationsList$station_id[row]))
+#         }
+#         return(NOAAData)
+#     })
+# }
 #NOAAData <- NOAADataPull()
 #write.csv(NOAAData,"www/NOAAData_v1.csv")
 
@@ -439,6 +462,8 @@ NOAADataPull <- function()
 ### Used in  observeEvent(input$Map_marker_click
 GetNOAAData <- function(StationID,ParameterName)
 {
+  
+  
   if(StationID %in% WRNOAAThresholds$WRstation_id)
   {
    NOAAStation_ID <- WRNOAAThresholds %>%
@@ -491,6 +516,7 @@ else
  NOAAStationData$station_id <- NOAAStation_ID
 
   return(NOAAStationData)
+
 }
 ###### ###### ######  ###
 ###### END API FUNCTIONS #
@@ -580,7 +606,7 @@ GetThreshold <- function(Station_ID, ParameterName)
 GetColor <- function(Station_ID,Parameter,Value)
 {
  
-        Color <- "Grey"
+        Color <- "Blue"
         
         ## Checks to see if the station is in the the WRNOAA Data 
         if(Station_ID %in% WRNOAAThresholds$WRstation_id)
@@ -859,7 +885,7 @@ output$StationText <- renderUI({
     char0 <- character(0)
     
     LastSampled <- StationDataReactive$df %>%
-                   as.tibble()%>%
+                   as_tibble()%>%
                    filter(Date < as.POSIXlt(Sys.time(), tz = "ETC"))%>%
                    select(Date, Value)%>%
                    filter(!is.na(Value))%>%
