@@ -108,21 +108,17 @@ ui <- fluidPage(
 server <- function(input, output,session) {
     
   shinyalert(
-    title = "How to use this Map",
-    text = "Click on a location icon to see recent conditions. To see past conditions or future predictions click the trends tab.
-Water quality data is collected Thursdays between Memorial Day and Labor Day. Stage and Flow information is available year-round.
-Square icons contain only stage and flow information. Caution warnings for river levels at these locations are for average paddlers and based on local guide recommendations. 
-Circle icons contain bacteria, temperature, stage, flow, and turbidity (cloudiness) values. Caution levels at these locations are for average swimmers and based on local guide and EPA recommendations.
-If a station value reads -9 it means no data was collected during this sampling event.
+    title = "This map is currently undergoing maintainence",#"How to use this Map",
+    text = "Click on a location icon to see recent conditions. To see past conditions or future predictions click the trends tab. Water quality data is collected Thursdays between Memorial Day and Labor Day. Stage and Flow information is available year-round. Caution levels at these locations are for average swimmers and based on local guide and EPA recommendations. If a station value reads -9 it means no data was collected during this sampling event.
    
-Please use caution when recreating on the River as conditions may change quickly.",
+Disclaimer:This map contains layers created by the James River Association and is provided as a public resource. While every reasonable effort is made to ensure the accuracy and completeness of the data, JRA makes no warranties expressed or implied, concerning the accuracy, completeness or suitability of its data. Data is provided `as is` and JRA assumes no responsibility for any errors omissions or inacuracies. JRA will not be liable to you or any other person for any actions claims or damages in connection with your use of this map.",
     size = "s", 
     closeOnEsc = TRUE,
     closeOnClickOutside = TRUE,
     html = FALSE,
     showConfirmButton = TRUE,
     showCancelButton = FALSE,
-    confirmButtonText = "OK",
+    confirmButtonText = "I AGREE",
     confirmButtonCol = "#74D1EA",
     timer = 0,
     imageUrl = "",
@@ -217,7 +213,7 @@ IconRatio <- data.frame(IconColors,Ratio)
 Hucs <- rgdal::readOGR("www/HUC8s_v2.geojson", verbose = FALSE)
 
 ### River GeoJson ###
-River <- suppressWarnings(rgdal::readOGR("www/JamesRiverArea_v2.geojson", verbose = FALSE))
+River <- suppressWarnings(rgdal::readOGR("www/JamesRiverArea_v3.geojson", verbose = FALSE))
 
 ### Image used when no station image is available 
 DefaultImage <- "https://www.savethesound.org/wp-content/uploads/2021/05/orient-point-state-park_SM_HeyNardo_FINAL.jpg"
