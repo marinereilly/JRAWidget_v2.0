@@ -114,7 +114,7 @@ server <- function(input, output,session) {
 Disclaimer:This map contains layers created by the James River Association and is provided as a public resource. While every reasonable effort is made to ensure the accuracy and completeness of the data, JRA makes no warranties expressed or implied, concerning the accuracy, completeness or suitability of its data. Data is provided `as is` and JRA assumes no responsibility for any errors omissions or inacuracies. JRA will not be liable to you or any other person for any actions claims or damages in connection with your use of this map.",
     size = "s", 
     closeOnEsc = TRUE,
-    closeOnClickOutside = TRUE,
+    closeOnClickOutside = FALSE,
     html = FALSE,
     showConfirmButton = TRUE,
     showCancelButton = FALSE,
@@ -1065,7 +1065,7 @@ output$GaugePlot <- renderPlotly({
     gauge = list(
       axis = list(range = list(Min,Max)),
       bar = list(color = ChartData$ColorHex[1]),
-      threshold = list(line= list(color = "black", width = 1),
+      threshold = list(line= list(color = "black", width = 2),
                        thickness = 1.2,
                        value = ThresholdValue))
   ) %>%
