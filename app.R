@@ -175,12 +175,13 @@ NOAAThresholds <- read_csv("www/NOAAThresholds_v2.csv")
 
 #NOAA square iconset for use in Map 
 #Note that WR stations are circles - a default leaflet shape.
-IconSet <- iconList(
-  Red = makeIcon(iconUrl = "www/images/NOAAred.png", iconWidth = 15, iconHeight = 15),
-  Yellow = makeIcon(iconUrl = "www/images/NOAAyellow.png", iconWidth = 15, iconHeight = 15),
-  Green = makeIcon(iconUrl = "www/images/NOAAgreen.png", iconWidth = 15, iconHeight = 15),
-  Grey = makeIcon(iconUrl = "www/images/NOAAgrey.png", iconWidth = 15, iconHeight = 15),
-  Blue = makeIcon(iconUrl = "www/images/NOAAblue.png", iconWidth = 15, iconHeight = 15))
+#no longer included because Thresholds for NOAA Stations were removed
+# IconSet <- iconList(
+#   Red = makeIcon(iconUrl = "www/images/NOAAred.png", iconWidth = 15, iconHeight = 15),
+#   Yellow = makeIcon(iconUrl = "www/images/NOAAyellow.png", iconWidth = 15, iconHeight = 15),
+#   Green = makeIcon(iconUrl = "www/images/NOAAgreen.png", iconWidth = 15, iconHeight = 15),
+#   Grey = makeIcon(iconUrl = "www/images/NOAAgrey.png", iconWidth = 15, iconHeight = 15),
+#   Blue = makeIcon(iconUrl = "www/images/NOAAblue.png", iconWidth = 15, iconHeight = 15))
 
 ### LOGICAL COMPONENETS DECLERATION ### 
 ##StationDataReactive$df is the selected data based on map marker click, and the parameter select 
