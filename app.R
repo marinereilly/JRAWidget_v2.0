@@ -744,7 +744,8 @@ output$Map <- renderLeaflet({
         addPolygons(data = Hucs, color = "#76cdae", weight = 3, label = "James River Watershed")%>%
         addPolygons(data = River, color = "#104a77", opacity = 1, stroke = TRUE, weight = 1, label = "James River and Tributaries")%>%
         addCircleMarkers(data = WRStations, lng = ~Longitude, lat = ~Latitude, layerId = ~ station_id, label = ~station_name, fillColor = ~ColorHex, color = "black", fillOpacity = 1, weight = 1)%>%
-        addMarkers(data = NOAAStations, lng = ~Longitude, lat = ~Latitude, layerId = ~ station_id, label = ~station_name, icon = ~IconSet[ColorHex])
+        addMarkers(data = NOAAStations, lng = ~Longitude, lat = ~Latitude, layerId = ~ station_id, label = ~station_name, 
+                   icon = ~makeIcon(iconUrl = "www/images/NOAAblue.png", iconWidth = 15, iconHeight = 15))
     
        # showModal(WarningModal)
 })
