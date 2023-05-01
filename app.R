@@ -1,4 +1,4 @@
-# JRA Widget 2.0
+# JRA Widget 2.1
 # Git https://github.com/ChesapeakeCommons/JRAWidget_v2.0.git
 # Readme https://docs.google.com/document/d/1dHaQ7w8Ttfirp27Yuaoji84n7KgoQs-Qo83T9WIb8-Q/edit
 # Created 05.19.2021
@@ -884,7 +884,7 @@ output$StationText <- renderUI({
     
     LastSampled <- StationDataReactive$df %>%
                    as_tibble()%>%
-                   filter(Date < as.POSIXlt(Sys.time(), tz = "ETC"))%>%
+                   filter(Date < as.POSIXlt(Sys.time(), tz = "EST"))%>%
                    select(Date, Value)%>%
                    filter(!is.na(Value))%>%
                    arrange(Date)%>%
