@@ -1,3 +1,5 @@
+
+#####Top of Code#####
 # JRA Widget 2.1
 # Git https://github.com/ChesapeakeCommons/JRAWidget_v2.0.git
 # Readme https://docs.google.com/document/d/1dHaQ7w8Ttfirp27Yuaoji84n7KgoQs-Qo83T9WIb8-Q/edit
@@ -211,10 +213,10 @@ Ratio <- c(4.7375,2.3449,3.375,4.797,3.31)
 IconRatio <- data.frame(IconColors,Ratio)
 
 ### Huc 8 GeoJson ### 
-Hucs <- rgdal::readOGR("www/HUC8s_v2.geojson", verbose = FALSE)
+Hucs <- sf::st_read("www/HUC8s_v2.geojson")
 
 ### River GeoJson ###
-River <- suppressWarnings(rgdal::readOGR("www/JamesRiverArea_v3.geojson", verbose = FALSE))
+River <- sf::st_read("www/JamesRiverArea_v3.geojson")
 
 ### Image used when no station image is available 
 DefaultImage <- "https://www.savethesound.org/wp-content/uploads/2021/05/orient-point-state-park_SM_HeyNardo_FINAL.jpg"
@@ -238,7 +240,7 @@ GetWRStations <- function()
     Request <- GET(paste("https://api.waterreporter.org/stations?sets=1227&geo_format=xy&access_token=",Token, sep = ""))
     
     ##Converting to dataframe 
-    jsonRequestText <- content(Request,as="text")
+    jsonRequestText <- content(Request,as="text",encoding = "UTF-8")
     parsed <- fromJSON(jsonRequestText)
     Data <- data.frame(parsed$features)
     
@@ -274,7 +276,7 @@ GetWRStations <- function()
         Request <- GET(URL)
         
         #Parsing
-        jsonRequestText <- content(Request,as="text")
+        jsonRequestText <- content(Request,as="text", encoding = "UTF-8")
         parsed <- fromJSON(jsonRequestText)
         
         #If the color is null, set to grey
@@ -478,12 +480,12 @@ GetNOAAData <- function(StationID,ParameterName)
                     filter(station_id == NOAAStation_ID)%>%
                     select(Date,ParameterName)%>%
                     rename("Value" = ParameterName)%>%
-                    mutate(ColorHex = "")
+                    mutate(ColorHex = "#74D1EA")
     
   ## Getting the correct ColorHex
   for (row in 1:nrow(NOAAStationData))
   {
-  NOAAStationData$ColorHex[row] <- GetColorHex(GetColor(StationID,ParameterName,NOAAStationData$Value[row]))
+  NOAAStationData$ColorHex[row] <- "#74D1EA"
   }
 
  CurrentReading <- GetCurrentReading(NOAAStation_ID,ParameterName,NOAAData)
@@ -572,24 +574,24 @@ GetThreshold <- function(Station_ID, ParameterName)
   {
     Threshold <- WRNOAAThresholds[0,]
     
-    if(ParameterName %in% WRNOAAThresholds$Parameter)
-    {
-      Threshold <- WRNOAAThresholds %>%
-                  filter(Parameter == ParameterName)%>%
-                  filter(WRstation_id == Station_ID)
-    }
+    # if(ParameterName %in% WRNOAAThresholds$Parameter)
+    # {
+    #   Threshold <- WRNOAAThresholds %>%
+    #               filter(Parameter == ParameterName)%>%
+    #               filter(WRstation_id == Station_ID)
+    # }
   }
   else
   {
     Threshold <- NOAAThresholds[0,]
-    
+
         if(Station_ID %in% NOAAThresholds$station_id)
         {
             if(ParameterName %in% NOAAThresholds$Parameter)
             {
                 Threshold <- NOAAThresholds %>%
                     filter(Parameter == ParameterName)%>%
-                    filter(station_id == Station_ID) 
+                    filter(station_id == Station_ID)
             }
         }
   }
@@ -603,7 +605,7 @@ GetThreshold <- function(Station_ID, ParameterName)
 GetColor <- function(Station_ID,Parameter,Value)
 {
  
-        Color <- "Blue"
+        Color <- "#74D1EA"
         
         ## Checks to see if the station is in the the WRNOAA Data 
         if(Station_ID %in% WRNOAAThresholds$WRstation_id)
@@ -611,18 +613,7 @@ GetColor <- function(Station_ID,Parameter,Value)
           ## Checks to see if Parameter is as well 
           if(Parameter %in% WRNOAAThresholds$Parameter)
           {
-           ## Gets the Threshold
-           Threshold <- GetThreshold(Station_ID,Parameter)
-           
-           if(!is.na(Threshold$ValueOne))
-           {
-           Color <- ifelse(Value <= Threshold$ValueOne,"Green",Color)
-           Color <- ifelse(Value > Threshold$ValueOne,Threshold$ValueOneColor,Color)
-           }
-           if(!is.na(Threshold$ValueTwo))
-           {
-             Color <- ifelse(Value > Threshold$ValueTwo,Threshold$ValueTwo$Color,Color)
-           }
+            Color <- "#74D1EA"
           }
         }
        else
@@ -631,15 +622,7 @@ GetColor <- function(Station_ID,Parameter,Value)
         {
             if(Parameter %in% NOAAThresholds$Parameter)
             {
-                Threshold <- GetThreshold(Station_ID,Parameter)
-                
-                Color <- ifelse(Value < Threshold$ValueOne,Threshold$ValueOneColor,Threshold$ValueTwoColor)
-                Color <- ifelse(Value < Threshold$ValueThree,Color,Threshold$ValueThreeColor)
-                
-                if(!is.na(Threshold$ValueFour))
-                {
-                    Color <- ifelse(Value < Threshold$ValueFour,Color,Threshold$ValueFourColor)
-                }
+              Color <- "#74D1EA"
             }
          }
        }
@@ -929,6 +912,7 @@ output$StationText <- renderUI({
             paste(LastSampled,".", sep = ""),
             HTML("<br/>"),
             paste(StationDescription),
+            HTML("<br/>"),
             paste0(ifelse(identical(NOAAStationName,char0),"",paste("Stage and Flow data are from ",NOAAStationName,".", sep = ""))),
             HTML("<br/>"),
            uiOutput("MoreInfo")
@@ -939,29 +923,29 @@ output$StationText <- renderUI({
 
 #MoreInfo
 # Used Above in Station Text
-output$MoreInfo <- renderUI({
-    click <- input$Map_marker_click
-    req(StationDataReactive$df)
-   
-    if(!is.na(StationDataReactive$df$Value))
-    {
-    if(StationDataReactive$df$ColorHex[1] != "#999999")
-    {
-   Text <- ifelse(GetStationType(StationDataReactive$df$station_id[1]) == 1,"Thresholds were created by locals familiar with the area for a typical user.","Threshold is from EPA guidance on Recreational Water Use.")
-   }
-   else
-   {
-    Text <- "No Threshold Information available."
-   }
-    }
-    else
-    {
-      Text <- "No Data Currently Available. Select a New Parameter."
-    }
-    tagList(
-        Text
-    )
-})
+# output$MoreInfo <- renderUI({
+#     click <- input$Map_marker_click
+#     req(StationDataReactive$df)
+#    
+#     if(!is.na(StationDataReactive$df$Value))
+#     {
+#     if(StationDataReactive$df$ColorHex[1] != "#999999")
+#     {
+#    Text <- ifelse(GetStationType(StationDataReactive$df$station_id[1]) == 1,"There is no threshold for this parameter","Threshold is from EPA guidance on Recreational Water Use.")
+#    }
+#    else
+#    {
+#     Text <- "No Threshold Information available."
+#    }
+#     }
+#     else
+#     {
+#       Text <- "No Data Currently Available. Select a New Parameter."
+#     }
+#     tagList(
+#         Text
+#     )
+# })
 
 ## Station Status Image
 output$StationStatus <- renderImage({
@@ -1130,10 +1114,10 @@ if(!is.na(StationDataReactive$df$Value[1]))
     }
     
     ## Getting the correct ColorHex
-    for (row in 1:nrow(ChartData))
-    {
-    ChartData$ColorHex[row] <- GetColorHex(GetColor(click$id,input$ParamSelect,ChartData$Value[row]))
-    }
+    # for (row in 1:nrow(ChartData))
+    # {
+    # ChartData$ColorHex[row] <- GetColorHex(GetColor(click$id,input$ParamSelect,ChartData$Value[row]))
+    # }
     
   }
   
