@@ -110,10 +110,11 @@ ui <- fluidPage(
 server <- function(input, output,session) {
     
   shinyalert(
-    title = "This map is currently undergoing maintainence",#"How to use this Map",
+    title = #"This map is currently undergoing maintainence",
+      "How to use this Map",
     text = "Click on a location icon to see recent conditions. To see past conditions or future predictions click the trends tab. Water quality data is collected Thursdays between Memorial Day and Labor Day. Stage and Flow information is available year-round. Caution levels at these locations are for average swimmers and based on local guide and EPA recommendations. If a station value reads -9 it means no data was collected during this sampling event.
    
-Disclaimer:This map contains layers created by the James River Association and is provided as a public resource. While every reasonable effort is made to ensure the accuracy and completeness of the data, JRA makes no warranties expressed or implied, concerning the accuracy, completeness or suitability of its data. Data is provided `as is` and JRA assumes no responsibility for any errors omissions or inacuracies. JRA will not be liable to you or any other person for any actions claims or damages in connection with your use of this map.",
+Disclaimer:This map contains layers created by the James River Association and is provided as a public resource. While every reasonable effort is made to ensure the accuracy and completeness of the data, JRA makes no warranties, expressed or implied, concerning the accuracy, completeness or suitability of its data. Data is provided as is and JRA assumes no responsibility for any errors, omissions or inaccuracies. JRA will not be liable to you or any other person for any actions, claims or damages in connection with your use of this map.",
     size = "s", 
     closeOnEsc = TRUE,
     closeOnClickOutside = FALSE,
@@ -725,7 +726,7 @@ output$Map <- renderLeaflet({
     
     leaflet("Map")%>%
         addProviderTiles("CartoDB.VoyagerLabelsUnder", group = "Streets")%>%
-        addPolygons(data = Hucs, color = "#76cdae", weight = 3, label = "James River Watershed")%>%
+        addPolygons(data = Hucs, color = "#76cdae", weight = 3)%>%
         addPolygons(data = River, color = "#104a77", opacity = 1, stroke = TRUE, weight = 1, label = "James River and Tributaries")%>%
         addCircleMarkers(data = WRStations, lng = ~Longitude, lat = ~Latitude, layerId = ~ station_id, label = ~station_name, fillColor = ~ColorHex, color = "black", fillOpacity = 1, weight = 1)%>%
         addMarkers(data = NOAAStations, lng = ~Longitude, lat = ~Latitude, layerId = ~ station_id, label = ~station_name, 
